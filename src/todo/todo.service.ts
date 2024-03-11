@@ -1,9 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Todo } from '@prisma/client';
+import { Prisma, Todo } from '@prisma/client';
 
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateTodoDto, UpdateTodoDto } from './dto';
-import { CountTodoResponse, ResponseDataWithMessage, ResponseWithMessage } from './types';
+import { CreateTodoDto, GetAllTodoDto, UpdateTodoDto } from './dto';
+import {
+  CountTodoResponse,
+  PaginatedData,
+  ResponseDataWithMessage,
+  ResponseWithMessage,
+} from './types';
 
 @Injectable()
 export class TodoService {
@@ -60,38 +65,85 @@ export class TodoService {
     }
   }
 
-  async getAll(): Promise<Array<Todo>> {
+  async getAll(body: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
     try {
-      const todos = await this.prismaService.todo.findMany();
-      return todos;
+      const defaultWhereOptions = this.defaultPaginationOptions(body);
+
+      const todos = await this.prismaService.todo.findMany({
+        ...defaultWhereOptions,
+      });
+
+      const totalResults = await this.countTotalTodo();
+
+      const totalPages = Math.ceil(totalResults / body?.take);
+
+      return {
+        data: todos,
+        totalPages,
+        totalResults,
+      };
     } catch (error) {
       throw new NotFoundException("Can't fetch all todos!");
     }
   }
 
-  async getAllCompleted(): Promise<Array<Todo>> {
+  async getAllCompleted(body: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
     try {
-      const todos = await this.prismaService.todo.findMany({
+      const paginationOptions = this.defaultPaginationOptions(body);
+
+      const completedWhereOptions = {
         where: {
           completed: true,
         },
+      };
+
+      const todos = await this.prismaService.todo.findMany({
+        ...paginationOptions,
+        ...completedWhereOptions,
       });
 
-      return todos;
+      const totalResults = await this.prismaService.todo.count({
+        ...completedWhereOptions,
+      });
+
+      const totalPages = Math.ceil(totalResults / body?.take);
+
+      return {
+        data: todos,
+        totalPages,
+        totalResults,
+      };
     } catch (error) {
       throw new NotFoundException("Can't fetch all todos!");
     }
   }
 
-  async getAllCurrent(): Promise<Array<Todo>> {
+  async getAllCurrent(body: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
     try {
-      const todos = await this.prismaService.todo.findMany({
+      const paginationOptions = this.defaultPaginationOptions(body);
+
+      const currentWhereOptions = {
         where: {
           completed: false,
         },
+      };
+
+      const todos = await this.prismaService.todo.findMany({
+        ...paginationOptions,
+        ...currentWhereOptions,
       });
 
-      return todos;
+      const totalResults = await this.prismaService.todo.count({
+        ...currentWhereOptions,
+      });
+
+      const totalPages = Math.ceil(totalResults / body?.take);
+
+      return {
+        data: todos,
+        totalPages,
+        totalResults,
+      };
     } catch (error) {
       throw new NotFoundException("Can't fetch all todos!");
     }
@@ -103,6 +155,7 @@ export class TodoService {
         completed: true,
       },
     });
+
     const current = await this.prismaService.todo.count({
       where: {
         completed: false,
@@ -124,10 +177,25 @@ export class TodoService {
       });
 
       return {
-        message: 'Todo was removed',
+        message: 'Todo was removed successfully!',
       };
     } catch (error) {
       throw new NotFoundException("Todo with such id doesn't fount");
     }
+  }
+
+  private defaultPaginationOptions(body: GetAllTodoDto): Prisma.TodoFindManyArgs {
+    return {
+      skip: body?.skip,
+      take: body?.take,
+      orderBy: {
+        created_at: 'desc',
+      },
+    };
+  }
+
+  private async countTotalTodo(): Promise<number> {
+    const total = await this.prismaService.todo.count();
+    return total;
   }
 }
