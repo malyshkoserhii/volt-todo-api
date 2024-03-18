@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { Todo } from '@prisma/client';
 
 import { TodoService } from './todo.service';
@@ -15,18 +15,18 @@ export class TodoController {
   constructor(private todoService: TodoService) {}
 
   @Get('all')
-  getAll(@Body() body: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
-    return this.todoService.getAll(body);
+  getAll(@Query() query: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
+    return this.todoService.getAll(query);
   }
 
   @Get('completed')
-  getAllCompleted(@Body() body: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
-    return this.todoService.getAllCompleted(body);
+  getAllCompleted(@Query() query: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
+    return this.todoService.getAllCompleted(query);
   }
 
   @Get('current')
-  getAllCurrent(@Body() body: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
-    return this.todoService.getAllCurrent(body);
+  getAllCurrent(@Query() query: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
+    return this.todoService.getAllCurrent(query);
   }
 
   @Get('count')
