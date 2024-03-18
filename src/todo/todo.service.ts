@@ -65,9 +65,9 @@ export class TodoService {
     }
   }
 
-  async getAll(body: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
+  async getAll(query: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
     try {
-      const defaultWhereOptions = this.defaultPaginationOptions(body);
+      const defaultWhereOptions = this.defaultPaginationOptions(query);
 
       const todos = await this.prismaService.todo.findMany({
         ...defaultWhereOptions,
@@ -75,7 +75,7 @@ export class TodoService {
 
       const totalResults = await this.countTotalTodo();
 
-      const totalPages = Math.ceil(totalResults / body?.take);
+      const totalPages = Math.ceil(totalResults / Number(query?.take));
 
       return {
         data: todos,
@@ -87,9 +87,9 @@ export class TodoService {
     }
   }
 
-  async getAllCompleted(body: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
+  async getAllCompleted(query: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
     try {
-      const paginationOptions = this.defaultPaginationOptions(body);
+      const paginationOptions = this.defaultPaginationOptions(query);
 
       const completedWhereOptions = {
         where: {
@@ -106,7 +106,7 @@ export class TodoService {
         ...completedWhereOptions,
       });
 
-      const totalPages = Math.ceil(totalResults / body?.take);
+      const totalPages = Math.ceil(totalResults / Number(query?.take));
 
       return {
         data: todos,
@@ -118,9 +118,9 @@ export class TodoService {
     }
   }
 
-  async getAllCurrent(body: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
+  async getAllCurrent(query: GetAllTodoDto): Promise<PaginatedData<Array<Todo>>> {
     try {
-      const paginationOptions = this.defaultPaginationOptions(body);
+      const paginationOptions = this.defaultPaginationOptions(query);
 
       const currentWhereOptions = {
         where: {
@@ -137,7 +137,7 @@ export class TodoService {
         ...currentWhereOptions,
       });
 
-      const totalPages = Math.ceil(totalResults / body?.take);
+      const totalPages = Math.ceil(totalResults / Number(query?.take));
 
       return {
         data: todos,
@@ -186,8 +186,8 @@ export class TodoService {
 
   private defaultPaginationOptions(body: GetAllTodoDto): Prisma.TodoFindManyArgs {
     return {
-      skip: body?.skip,
-      take: body?.take,
+      skip: Number(body?.skip),
+      take: Number(body?.take),
       orderBy: {
         created_at: 'desc',
       },
